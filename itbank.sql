@@ -42,3 +42,39 @@ DELETE FROM cliente WHERE customer_name = 'Noel' AND customer_surname = 'David';
 SELECT loan_type, max(loan_total) FROM prestamo;
 
 SELECT * from prestamo ORDER by loan_total DESC LIMIT 1; 
+
+-- Problematica 3
+
+--Punto 1
+SELECT account_id, balance FROM cuenta WHERE balance >= 0 ORDER BY account_id;
+
+--Punto 2
+SELECT customer_name, customer_surname, strftime('%Y',date('now')) - strftime('%Y',date(dob)) AS 'customer_age' 
+FROM cliente WHERE customer_surname LIKE '%Z%' ORDER BY customer_surname;
+
+--Punto 3
+SELECT customer_name, customer_surname, strftime('%Y',date('now')) - strftime('%Y',date(dob)) AS 'customer_age', branch_name 
+FROM cliente INNER JOIN sucursal ON cliente.branch_id = sucursal.branch_id WHERE customer_name = 'Brendan' ORDER BY branch_name;
+
+--Punto 4
+SELECT loan_total, loan_type, customer_name, customer_surname 
+FROM prestamo INNER JOIN cliente ON cliente.customer_id = prestamo.loan_id 
+WHERE loan_total >80000 OR loan_type = 'PRENDARIO';
+
+--Punto 5
+SELECT loan_total,customer_name, customer_surname 
+FROM prestamo INNER JOIN cliente ON cliente.customer_id = prestamo.loan_id 
+WHERE loan_total > (SELECT AVG(ALL loan_total) FROM prestamo);
+
+--Punto 6
+SELECT count(*) FILTER(WHERE (strftime('%Y',date('now')) - strftime('%Y',date(dob)))<50) AS menores_50 FROM cliente;
+
+--Punto 7
+SELECT balance FROM cuenta WHERE balance>8000 LIMIT 5;
+
+--Punto 8
+SELECT loan_total,loan_type, loan_date FROM prestamo 
+WHERE strftime('%m',date(loan_date))='04' OR strftime('%m',date(loan_date))='06' OR strftime('%m',date(loan_date))='08'
+ORDER BY loan_total;
+
+--Punto 9
