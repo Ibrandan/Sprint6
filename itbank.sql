@@ -78,3 +78,4 @@ WHERE strftime('%m',date(loan_date))='04' OR strftime('%m',date(loan_date))='06'
 ORDER BY loan_total;
 
 --Punto 9
+SELECT loan_type, sum(loan_total)AS loan_total_accu FROM prestamo WHERE loan_total IS NOT NULL GROUP BY loan_type ORDER BY loan_type;
