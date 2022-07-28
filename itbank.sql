@@ -105,8 +105,6 @@ SET tipo = (
 /* Vista con las columnas id, numero sucursal, nombre, apellido, DNI 
  y edad de la tabla cliente calculada a partir de la fecha de nacimiento */
 
-
--- Problematica 2
 CREATE VIEW listado_clientes as
 SELECT customer_id,
     branch_id,
