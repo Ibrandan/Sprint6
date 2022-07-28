@@ -322,12 +322,11 @@ FROM prestamo
 WHERE loan_total IS NOT NULL
 GROUP BY loan_type
 ORDER BY loan_type;
+
 --Problematica 4
+
 --Punto 1
 
-SELECT branch_name,
-    count(customer_id)
-FROM cliente c
-    LEFT JOIN sucursal s ON s.branch_id = c.branch_id
-GROUP BY branch_name
-ORDER BY count(customer_id) DESC;
+SELECT cliente.branch_id, sucursal.branch_name, count(all cliente.branch_id) AS Cantidad
+FROM cliente INNER JOIN sucursal ON cliente.branch_id = sucursal.branch_id
+GROUP BY sucursal.branch_id ORDER BY Cantidad DESC;
