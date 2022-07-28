@@ -1,15 +1,115 @@
+-- Problematica 1
+CREATE TABLE "tipos_cuentas"(
+    clase TEXT NOT NULL UNIQUE,
+    descubierto INTEGER NOT NULL,
+    comisiones_transferencia REAL NOT NULL,
+    max_extracciones INTEGER NOT NULL,
+    max_chequeras INTEGER NOT NULL,
+    max_tarjetas INTEGER NOT NULL,
+    max_transferencias_recibida INTEGER,
+    puede_comprar_dolar TEXT NOT NULL
+);
+CREATE TABLE "tipo_cliente" (
+    client_id INTEGER NOT NULL,
+    tipo_cuenta TEXT NOT NULL,
+    tipo_tarjeta TEXT,
+    numero INTEGER UNIQUE NOT NULL,
+    CVV INTEGER NOT NULL,
+    fecha_otorgamiento TEXT NOT NULL,
+    vencimiento TEXT NOT NULL,
+    marca_id INTEGER NOT NULL
+);
+CREATE TABLE "marcas_tarjeta" (
+    marca_id INTEGER NOT NULL UNIQUE,
+    marca TEXT NOT NULL
+);
+INSERT INTO tipos_cuentas (
+        clase,
+        descubierto,
+        comisiones_transferencia,
+        max_extracciones,
+        max_chequeras,
+        max_tarjetas,
+        max_transferencias_recibida,
+        puede_comprar_dolar
+    )
+VALUES ("CLASSIC", 0, 1, 10000, 0, 0, 150000, "NO"),
+    ("GOLD", 10000, 0.5, 20000, 1, 1, 500000, "SI"),
+    ("BLACK", 10000, 0, 100000, 2, 5, NULL, "SI");
+INSERT INTO marcas_tarjeta (marca_id, marca)
+VALUES (1, "Maestro"),
+    (2, "American Express"),
+    (3, "Diners Club"),
+    (4, "Discover"),
+    (5, "MasterCard"),
+    (6, "Visa");
+INSERT INTO tipo_cliente (
+        client_id,
+        tipo_cuenta,
+        tipo_tarjeta,
+        numero,
+        CVV,
+        fecha_otorgamiento,
+        vencimiento,
+        marca_id
+    )
+SELECT ID,
+    TIPOCUENTA,
+    TIPOTARJETA,
+    NUMERO,
+    cvv,
+    otorgado,
+    vencimiento,
+    numberrange
+FROM tarjetas_csv;
+UPDATE tipo_cliente
+SET tipo_tarjeta = "DEBITO"
+WHERE tipo_cuenta = "CLASSIC";
+UPDATE tipo_cliente
+SET tipo_tarjeta = "CREDITO"
+WHERE NOT tipo_cuenta = "CLASSIC"
+    AND tipo_tarjeta = "NULL";
+CREATE TABLE direcciones (id INTEGER, tipo TEXT, dir TEXT);
+INSERT INTO direcciones (id, tipo, dir)
+SELECT id,
+    tipo_direccion,
+    direccion
+FROM direcciones_csv;
+UPDATE direcciones
+SET tipo = "SUCURSAL"
+WHERE NOT EXISTS(
+        SELECT id
+        FROM direcciones
+        WHERE tipo = id
+    )
+    AND tipo = "NULL"
+    AND random() > 0
+    AND id BETWEEN 1 AND 100;
+UPDATE direcciones
+SET tipo = "CLIENTE"
+WHERE tipo = "NULL"
+    AND random() > 0;
+UPDATE direcciones
+SET tipo = "EMPLEADO"
+WHERE tipo = "NULL";
+ALTER TABLE cliente
+ADD COLUMN tipo;
+UPDATE cliente
+SET tipo = (
+        SELECT tipo_cuenta
+        FROM tipo_cliente
+        WHERE client_id = cliente.customer_id
+    );
 -- Problematica 2
 /* Vista con las columnas id, numero sucursal, nombre, apellido, DNI 
  y edad de la tabla cliente calculada a partir de la fecha de nacimiento */
+/*
+ Crear en la base de datos los tipos de cliente, de cuenta y marcas de 
+ tarjeta. Insertar los valores según la información provista en el Sprint 
+ 5 
+ */
+-- Problematica 2
 CREATE VIEW listado_clientes as
-SELECT
-    /*
-     Crear en la base de datos los tipos de cliente, de cuenta y marcas de 
-     tarjeta. Insertar los valores según la información provista en el Sprint 
-     5 
-     */
-    -- Problematica 2
-    CREATE VIEW listado_clientes as
 SELECT customer_id,
     branch_id,
     customer_name,
@@ -48,7 +148,13 @@ INSERT INTO cliente(
         branch_id,
         dob
     )
-VALUES('Hall', 'Mcconnell', '52055464', 45, '1968-04-30');
+VALUES(
+        'Hall',
+        'Mcconnell',
+        '52055464',
+        45,
+        '1968-04-30'
+    );
 INSERT INTO cliente(
         customer_name,
         customer_surname,
@@ -72,7 +178,13 @@ INSERT INTO cliente(
         branch_id,
         dob
     )
-VALUES('Gabriel', 'Harmon', '57063950', 27, '1976-04-01');
+VALUES(
+        'Gabriel',
+        'Harmon',
+        '57063950',
+        27,
+        '1976-04-01'
+    );
 SELECT *
 FROM listado_clientes
 WHERE customer_DNI = '47730534';
