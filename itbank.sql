@@ -1,105 +1,81 @@
 -- Problematica 1
-CREATE TABLE "tipos_cuentas"(
-    clase TEXT NOT NULL UNIQUE,
-    descubierto INTEGER NOT NULL,
-    comisiones_transferencia REAL NOT NULL,
-    max_extracciones INTEGER NOT NULL,
-    max_chequeras INTEGER NOT NULL,
-    max_tarjetas INTEGER NOT NULL,
-    max_transferencias_recibida INTEGER,
-    puede_comprar_dolar TEXT NOT NULL
+-- Punto 1
+CREATE TABLE "tipo_cuenta"(
+    type_id PRIMARY KEY,
+    type_account TEXT NOT NULL DEFAULT "Caja de Ahorro en Pesos"
 );
 CREATE TABLE "tipo_cliente" (
-    client_id INTEGER NOT NULL,
-    tipo_cuenta TEXT NOT NULL,
-    tipo_tarjeta TEXT,
-    numero INTEGER UNIQUE NOT NULL,
-    CVV INTEGER NOT NULL,
-    fecha_otorgamiento TEXT NOT NULL,
-    vencimiento TEXT NOT NULL,
-    marca_id INTEGER NOT NULL
+    client_id PRIMARY KEY,
+    type_client TEXT NOT NULL DEFAULT "Classic"
 );
 CREATE TABLE "marcas_tarjeta" (
-    marca_id INTEGER NOT NULL UNIQUE,
-    marca TEXT NOT NULL
+    brand_id PRIMARY KEY,
+    type_brand TEXT NOT NULL DEFAULT "VISA"
 );
-INSERT INTO tipos_cuentas (
-        clase,
-        descubierto,
-        comisiones_transferencia,
-        max_extracciones,
-        max_chequeras,
-        max_tarjetas,
-        max_transferencias_recibida,
-        puede_comprar_dolar
-    )
-VALUES ("CLASSIC", 0, 1, 10000, 0, 0, 150000, "NO"),
-    ("GOLD", 10000, 0.5, 20000, 1, 1, 500000, "SI"),
-    ("BLACK", 10000, 0, 100000, 2, 5, NULL, "SI");
-INSERT INTO marcas_tarjeta (marca_id, marca)
-VALUES (1, "Maestro"),
-    (2, "American Express"),
-    (3, "Diners Club"),
-    (4, "Discover"),
-    (5, "MasterCard"),
-    (6, "Visa");
-INSERT INTO tipo_cliente (
-        client_id,
-        tipo_cuenta,
-        tipo_tarjeta,
-        numero,
-        CVV,
-        fecha_otorgamiento,
-        vencimiento,
-        marca_id
-    )
-SELECT ID,
-    TIPOCUENTA,
-    TIPOTARJETA,
-    NUMERO,
-    cvv,
-    otorgado,
-    vencimiento,
-    numberrange
-FROM tarjetas_csv;
-UPDATE tipo_cliente
-SET tipo_tarjeta = "DEBITO"
-WHERE tipo_cuenta = "CLASSIC";
-UPDATE tipo_cliente
-SET tipo_tarjeta = "CREDITO"
-WHERE NOT tipo_cuenta = "CLASSIC"
-    AND tipo_tarjeta = "NULL";
-CREATE TABLE direcciones (id INTEGER, tipo TEXT, dir TEXT);
-INSERT INTO direcciones (id, tipo, dir)
-SELECT id,
-    tipo_direccion,
-    direccion
-FROM direcciones_csv;
-UPDATE direcciones
-SET tipo = "SUCURSAL"
-WHERE NOT EXISTS(
-        SELECT id
-        FROM direcciones
-        WHERE tipo = id
-    )
-    AND tipo = "NULL"
-    AND random() > 0
-    AND id BETWEEN 1 AND 100;
-UPDATE direcciones
-SET tipo = "CLIENTE"
-WHERE tipo = "NULL"
-    AND random() > 0;
-UPDATE direcciones
-SET tipo = "EMPLEADO"
-WHERE tipo = "NULL";
-ALTER TABLE cliente
-ADD COLUMN tipo;
-UPDATE cliente
-SET tipo = (
-        SELECT tipo_cuenta
-        FROM tipo_cliente
-        WHERE client_id = cliente.customer_id
-    );
+
+INSERT INTO "tipo_cliente" VALUES
+(1,"Classic"),(2,"Gold"),(3,"Black");
+
+INSERT INTO "tipo_cuenta" VALUES
+(1,"Caja de Ahorro en Pesos"),(2,"Caja de Ahorro en Dolares"),(3,"Cuenta Corriente");
+
+INSERT INTO "marcas_tarjeta" VALUES
+(1,"VISA"),(2,"MASTERCARD"),(3,"AMERICAN EXPRESS");
+
+-- Punto 2, 3, 4--
+
+CREATE TABLE "Tarjeta"(
+    card_id INTEGER PRIMARY KEY,
+    card_number TEXT UNIQUE CHECK (length(card_number)<20),
+    card_cvv INT NOT NULL,
+    card_gived TEXT,
+    card_expiration TEXT,
+    card_type TEXT,
+    card_brand INTEGER,
+    client INTEGER,
+    
+    FOREIGN KEY (card_brand) REFERENCES marcas_tarjeta(brand_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (client) REFERENCES cliente(customer_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Punto 5
+
+-- El punto 5 se realiza mediante la importacion del archivo Tarjeta.csv
+
+-- Punto 6
+
+CREATE TABLE "Direccion_cliente"(
+    address_client_id PRIMARY KEY,
+    address_type_client TEXT NOT NULL DEFAULT "CLIENTE"
+);
+
+INSERT INTO "Direccion_cliente" VALUES
+(1,"CLIENTE"),(2,"EMPLEADO"),(3,"SUCURSAL");
+
+CREATE TABLE "Direccion"(
+    address_id INTEGER PRIMARY KEY,
+    address_street TEXT NOT NULL,
+    address_street_number TEXT NOT NULL,
+    address_city TEXT NOT NULL,
+    address_country TEXT NOT NULL,
+    address_type_required INTEGER,
+
+    FOREIGN KEY (address_type_required) REFERENCES Direccion_cliente(address_client_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- El punto 7 se realiza mediante la importacion del archivo Direccion.csv
+
+-- Punto 8
+
+ALTER TABLE cuenta ADD account_type INTEGER REFERENCES tipo_cuenta(type_id);
+
+-- Punto 9
+ 
+UPDATE cuenta SET account_type = ((abs(random() % 3 )))+1;
+
+-- Punto 10
+
+UPDATE empleado SET employee_hire_date = substr(employee_hire_date, 7)||"-"||substr(employee_hire_date, 4,2)||"-"||substr(employee_hire_date, 1,2);
 
 -- Problematica 2
 
@@ -112,10 +88,8 @@ SELECT customer_id,
     customer_name,
     customer_surname,
     customer_DNI,
-    strftime('%Y', date('now')) - strftime('%Y', date(dob)) AS 'customer_age'
+    strftime('%Y-%m-%d', date('now')) - strftime('%Y-%m-%d', date(dob)) AS 'customer_age'
 FROM cliente;
-
-/* strftime() devuelve la fecha formateada como se indica en el primer argumento. El segundo parámetro se usa para mencionar la cadena de tiempo, pueder ser la fecha actual, fecha de nacimiento, etc. */
 
 /* Mostrar las columnas de los clientes, ordenadas por el DNI de menor 
  a mayor y cuya edad sea superior a 40 años */
@@ -143,43 +117,12 @@ INSERT INTO cliente(
         branch_id,
         dob
     )
-VALUES('Lois', 'Stout', '47730534', 80, '1984-07-07');
-
-INSERT INTO cliente(
-        customer_name,
-        customer_surname,
-        customer_DNI,
-        branch_id,
-        dob
-    )
-VALUES('Hall', 'Mcconnell', '52055464', 45, '1968-04-30');
-
-INSERT INTO cliente(
-        customer_name,
-        customer_surname,
-        customer_DNI,
-        branch_id,
-        dob
-    )
-VALUES('Hilel', 'Mclean', '43625213', 77, '1993-03-28');
-
-INSERT INTO cliente (
-        customer_name,
-        customer_surname,
-        customer_DNI,
-        branch_id,
-        dob
-    )
-VALUES('Jin', 'Cooley', '21207908', 96, '1959-08-24');
-
-INSERT INTO cliente(
-        customer_name,
-        customer_surname,
-        customer_DNI,
-        branch_id,
-        dob
-    )
-VALUES( 'Gabriel', 'Harmon', '57063950', 27, '1976-04-01');
+VALUES
+('Lois', 'Stout', '47730534', 80, '1984-07-07'),
+('Hall', 'Mcconnell', '52055464', 45, '1968-04-30'),
+('Hilel', 'Mclean', '43625213', 77, '1993-03-28'),
+('Jin', 'Cooley', '21207908', 96, '1959-08-24'),
+('Gabriel', 'Harmon', '57063950', 27, '1976-04-01');
 
 SELECT *
 FROM listado_clientes
@@ -201,64 +144,54 @@ WHERE customer_name = 'Noel' AND customer_surname = 'David';
 
 /*  Consultar sobre cuál es el tipo de préstamo de mayor importe */
 
-SELECT loan_type, max(loan_total) FROM prestamo;
+SELECT loan_type AS Tipo_Prestamo, max(loan_total) AS Mayor_Importe FROM prestamo;
 
 /* MAX() es una función que devuelve el valor máximo en un conjunto de registros.*/
 
 -- Problematica 3
+
 --Punto 1
-SELECT account_id,
-    balance
+SELECT account_id,balance
 FROM cuenta
-WHERE balance >= 0
+WHERE balance < 0
 ORDER BY account_id;
+
 --Punto 2
-SELECT customer_name,
-    customer_surname,
-    strftime('%Y', date('now')) - strftime('%Y', date(dob)) AS 'customer_age'
-FROM cliente
+SELECT customer_name, customer_surname, customer_age
+FROM listado_clientes
 WHERE customer_surname LIKE '%Z%'
 ORDER BY customer_surname;
+
 --Punto 3
-SELECT customer_name,
-    customer_surname,
-    strftime('%Y', date('now')) - strftime('%Y', date(dob)) AS 'customer_age',
-    branch_name
-FROM cliente
-    INNER JOIN sucursal ON cliente.branch_id = sucursal.branch_id
+SELECT customer_name, customer_surname, customer_age, branch_name
+FROM listado_clientes
+INNER JOIN sucursal ON listado_clientes.branch_id = sucursal.branch_id
 WHERE customer_name = 'Brendan'
 ORDER BY branch_name;
+
 --Punto 4
-SELECT loan_total,
-    loan_type,
-    customer_name,
-    customer_surname
-FROM prestamo
-    INNER JOIN cliente ON cliente.customer_id = prestamo.loan_id
-WHERE loan_total > 80000
-    OR loan_type = 'PRENDARIO';
+SELECT * FROM prestamo WHERE loan_total > 8000000
+UNION
+SELECT * FROM prestamo WHERE loan_type = 'PRENDARIO'
+
 --Punto 5
-SELECT loan_total,
-    customer_name,
-    customer_surname
+SELECT loan_total, customer_name, customer_surname
 FROM prestamo
-    INNER JOIN cliente ON cliente.customer_id = prestamo.loan_id
+INNER JOIN cliente ON cliente.customer_id = prestamo.loan_id
 WHERE loan_total > (
-        SELECT AVG(ALL loan_total)
-        FROM prestamo
-    );
+    SELECT AVG(ALL loan_total)FROM prestamo
+);
+
 --Punto 6
-SELECT count(*) FILTER(
-        WHERE (
-                strftime('%Y', date('now')) - strftime('%Y', date(dob))
-            ) < 50
-    ) AS menores_50
-FROM cliente;
+SELECT count(*) FILTER( WHERE customer_age < 50) AS menores_50
+FROM listado_clientes;
+
 --Punto 7
-SELECT balance
+SELECT *
 FROM cuenta
-WHERE balance > 8000
+WHERE balance > 800000
 LIMIT 5;
+
 --Punto 8
 SELECT loan_total,
     loan_type,
@@ -268,6 +201,7 @@ WHERE strftime('%m', date(loan_date)) = '04'
     OR strftime('%m', date(loan_date)) = '06'
     OR strftime('%m', date(loan_date)) = '08'
 ORDER BY loan_total;
+
 --Punto 9
 SELECT loan_type,
     sum(loan_total) AS loan_total_accu
