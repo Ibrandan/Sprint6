@@ -214,6 +214,56 @@ ORDER BY loan_type;
 
 --Punto 1
 
-SELECT cliente.branch_id, sucursal.branch_name, count(all cliente.branch_id) AS Cantidad
+SELECT cliente.branch_id AS ID_SUCURSAL , sucursal.branch_name AS NOMBRE_SUCURSAL, count(all cliente.branch_id) AS Cantidad
 FROM cliente INNER JOIN sucursal ON cliente.branch_id = sucursal.branch_id
-GROUP BY sucursal.branch_id ORDER BY Cantidad DESC;
+GROUP BY sucursal.branch_id ORDER BY sucursal.branch_name DESC;
+
+--Punto 2
+
+CREATE VIEW empleadosporcliente AS SELECT 
+sucursal.branch_id, sucursal.branch_name AS NOMBRE_SUCURSAL, 
+count(DISTINCT empleado.employee_id) FILTER(WHERE empleado.branch_id = sucursal.branch_id)AS CANTIDAD_EMPLEADOS,
+count(DISTINCT cliente.customer_id) FILTER(WHERE cliente.branch_id = sucursal.branch_id) AS CANTIDAD_CLIENTES
+FROM sucursal INNER JOIN empleado ON sucursal.branch_id = empleado.branch_id INNER JOIN cliente ON sucursal.branch_id = cliente.branch_id
+GROUP BY sucursal.branch_name ORDER BY sucursal.branch_name;
+
+/*Se crea una vista para poder operar valores*/
+
+SELECT NOMBRE_SUCURSAL, CANTIDAD_CLIENTES, CANTIDAD_EMPLEADOS, ROUND((CAST(CANTIDAD_EMPLEADOS AS REAL)/CANTIDAD_CLIENTES),2) AS EMPLEADOS_X_CLIENTE FROM empleadosporcliente
+
+/*Se resuelve el calculo sobre los valores de la vista*/
+
+--Punto 3
+
+SELECT sucursal.branch_name AS NOMBRE_SUCURSAL, count(ALL card_id) FILTER
+(WHERE Tarjeta.card_type = "CREDITO") AS CANTIDAD_TARJETAS 
+FROM sucursal INNER JOIN cliente ON sucursal.branch_id = cliente.branch_id INNER JOIN Tarjeta ON Tarjeta.client = cliente.customer_id
+GROUP BY sucursal.branch_name ORDER BY sucursal.branch_name;
+
+--Punto 4
+
+SELECT sucursal.branch_name AS NOMBRE_SUCURSAL, AVG(prestamo.loan_total) AS promedio_segun_sucursal
+FROM prestamo
+INNER JOIN sucursal ON sucursal.branch_id = cliente.branch_id
+INNER JOIN cliente ON prestamo.customer_id = cliente.customer_id
+GROUP BY sucursal.branch_id;
+
+--Punto 5
+
+/*Creacion de la Tabla*/
+
+CREATE TABLE "auditoria_cuenta" (
+    audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    old_id INTEGER,
+    new_id INTEGER,
+    old_balance INTEGER,
+    new_balance INTEGER,
+    old_iban TEXT,
+    new_iban TEXT,
+    old_type INTEGER,
+    new_type INTEGER,
+    user_action TEXT,
+    created_at TEXT NOT NULL
+);
+
+/*Creacion del Trigger*/
