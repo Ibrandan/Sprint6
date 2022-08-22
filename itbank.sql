@@ -267,3 +267,51 @@ CREATE TABLE "auditoria_cuenta" (
 );
 
 /*Creacion del Trigger*/
+
+CREATE TRIGGER tr_update_cuenta
+BEFORE UPDATE ON cuenta WHEN old.balance <> new.balance OR old.iban <> new.iban OR old.account_type <> new.type
+BEGIN
+	INSERT INTO auditoria_cuenta (old_id, new_id, old_balance, new_balance, old_iban, new_iban, old_type, new_type, user_action, created_at)
+	VALUES (old.id, new.id, old.balance, new.balance, old.iban, new.iban, old.type, new.type, "UPDATE", date(now));
+END;
+
+/*Resta $100 de las cuentas ID 10,11,12,13 y 14*/
+
+UPDATE cuenta SET balance = balance - 10000
+WHERE account_id IN (10,11,12,13,14);
+
+/*Crea un indice en base al DNI*/
+
+CREATE unique INDEX indice_dni ON cliente(customer_DNI);
+
+/*Punto 6*/
+
+/*Creacion de Tabla movimientos*/
+
+CREATE TABLE movimientos (
+	movement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+	account_number INTEGER,
+	amount REAL,
+	operation_type TEXT,
+	hora TEXT
+);
+
+/*Transaccion desde la cuenta 200 a la 400*/
+
+BEGIN TRANSACTION;
+
+UPDATE OR ROLLBACK cuenta  
+SET balance = balance - 100000
+WHERE account_id = 200;
+
+UPDATE OR ROLLBACK cuenta  
+SET balance = balance + 100000
+WHERE account_id = 400;
+
+/*Registra el movimiento en la tabla movimientos, controlar por ROLLBACK si funciono o no*/
+
+INSERT OR ROLLBACK INTO movimientos(account_number, amount, operation_type, hora)
+VALUES (200,1000,"TRANSFERENCIA",datetime()),(400,1000,"TRANSFERENCIA",datetime());
+
+COMMIT;
+
